@@ -61,7 +61,11 @@ export const register = async (
       password: formData.get('password'),
     });
 
+    console.log('validatedData', validatedData)
+
     const [user] = await getUser(validatedData.email);
+
+    console.log('user', user)
 
     if (user) {
       return { status: 'user_exists' } as RegisterActionState;
@@ -75,6 +79,7 @@ export const register = async (
 
     return { status: 'success' };
   } catch (error) {
+    console.error('Error during registration:', error);
     if (error instanceof z.ZodError) {
       return { status: 'invalid_data' };
     }
