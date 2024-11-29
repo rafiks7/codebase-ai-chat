@@ -30,14 +30,14 @@ import { Textarea } from './ui/textarea';
 
 const suggestedActions = [
   {
-    title: 'What is the weather',
-    label: 'in San Francisco?',
-    action: 'What is the weather in San Francisco?',
+    title: 'Explain this code',
+    label: 'within the project?',
+    action: 'Explain this code in the current project context?',
   },
   {
-    title: 'Help me draft an essay',
-    label: 'about Silicon Valley',
-    action: 'Help me draft a short essay about Silicon Valley',
+    title: 'Find related components or functions',
+    label: 'for this feature?',
+    action: 'Find related components or functions for this feature in the codebase?',
   },
 ];
 
@@ -54,6 +54,7 @@ export function MultimodalInput({
   append,
   handleSubmit,
   className,
+  disabled,
 }: {
   chatId: string;
   input: string;
@@ -75,6 +76,7 @@ export function MultimodalInput({
     chatRequestOptions?: ChatRequestOptions,
   ) => void;
   className?: string;
+  disabled?: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -240,6 +242,7 @@ export function MultimodalInput({
         multiple
         onChange={handleFileChange}
         tabIndex={-1}
+        disabled={disabled}
       />
 
       {(attachments.length > 0 || uploadQueue.length > 0) && (
@@ -284,6 +287,7 @@ export function MultimodalInput({
             }
           }
         }}
+        disabled={disabled}
       />
 
       {isLoading ? (
