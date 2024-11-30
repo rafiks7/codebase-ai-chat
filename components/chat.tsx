@@ -3,7 +3,7 @@
 import type { Attachment, Message } from "ai";
 import { useChat } from "ai/react";
 import { AnimatePresence } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { useWindowSize } from "usehooks-ts";
 
@@ -29,6 +29,8 @@ export function Chat({
 }) {
   const { mutate } = useSWRConfig();
 
+  const [repoUrl, setRepoUrl] = useState("");
+
   const {
     messages,
     setMessages,
@@ -40,7 +42,7 @@ export function Chat({
     stop,
     data: streamingData,
   } = useChat({
-    body: { id, modelId: selectedModelId },
+    body: { id, modelId: selectedModelId, repoUrl },
     initialMessages,
     onFinish: () => {
       mutate("/api/history");
@@ -75,7 +77,6 @@ export function Chat({
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
 
   const [repoCloned, setRepoCloned] = useState(false);
-  const [repoUrl, setRepoUrl] = useState("");
 
   const handleNewChatSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -177,7 +178,7 @@ export function Chat({
               messages={messages}
               setMessages={setMessages}
               append={append}
-              disabled={!repoCloned}
+              disabled={!repoCloned && messages.length === 0}
             />
           </form>
         </div>

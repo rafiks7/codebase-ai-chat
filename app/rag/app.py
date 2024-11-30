@@ -3,7 +3,7 @@ from flask import Flask, jsonify, request
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from langchain_pinecone import PineconeVectorStore
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings 
 from langchain_community.embeddings import HuggingFaceEmbeddings
 from pinecone import Pinecone
 import os
@@ -17,6 +17,8 @@ from pinecone import Pinecone
 from dotenv import load_dotenv
 from flask_cors import CORS
 import shutil
+import stat
+
 
 # Load environment variables from .env.local
 if load_dotenv('.env.local'):
@@ -48,6 +50,32 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1",
     api_key=os.getenv("GROQ_API_KEY")
     )
+
+
+def make_writable(path):
+    """Make the directory writable if it isn't already"""
+    if os.path.exists(path):
+        # Make the directory and its contents writable (in case it's read-only)
+        for root, dirs, files in os.walk(path):
+            for dir in dirs:
+                os.chmod(os.path.join(root, dir), stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR)
+            for file in files:
+                os.chmod(os.path.join(root, file), stat.S_IWUSR | stat.S_IRUSR)
+
+def delete_directory(repo_path):
+    """Delete the repository directory after ensuring it is writable"""
+    try:
+        # Ensure the directory is writable before deletion
+        make_writable(repo_path)
+        
+        shutil.rmtree(repo_path)  # Remove the directory
+        print(f'Repository at {repo_path} deleted successfully.')
+        
+    except PermissionError as e:
+        print(f'PermissionError: {e} - You may not have the required permissions to delete this directory.')
+    except Exception as e:
+        print(f"Error while deleting: {str(e)}")
+
 
 def clone_repo(repo_url):
     print('repo_url', repo_url)
@@ -128,14 +156,7 @@ def get_main_files_content(repo_path: str):
         print(f"Error reading repository: {str(e)}")
         
         # Delete the cloned repository
-        try:
-            shutil.rmtree(repo_path)  # Remove the directory
-            # os.system(f"rmdir /S /Q {repo_path}")
-            print(f'Repository at {repo_path} deleted successfully.')
-        except PermissionError as e:
-            print(f"Permission denied while trying to delete {repo_path}: {str(e)}")
-        except Exception as e:
-            print(f"Error while deleting repository at {repo_path}: {str(e)}")
+        delete_directory(repo_path)
         
 
     return files_content
@@ -152,18 +173,22 @@ def upsert_to_pinecone(files_content, repo_url, repo_path):
 
             documents.append(doc)
 
-        vectorstore = PineconeVectorStore.from_documents(
-            documents=documents,
-            embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2"),
+
+        # Create a PineconeVectorStore instance
+        vectorstore = PineconeVectorStore(
+            embedding=OpenAIEmbeddings(model="text-embedding-3-small"), 
             index_name="codebase-rag",
             namespace=repo_url
         )
+
+        vectorstore.add_documents(documents)
+
     except Exception as e:
         print(f"error while uploading embeddings to pinecone: {str(e)}")
         
         # Delete the cloned repository
-        shutil.rmtree(repo_path)  # Remove the directory
-        print(f'Repository at {repo_path} deleted successfully.')
+        delete_directory(repo_path)
+
 
 
 
@@ -185,54 +210,21 @@ def embed_repository():
             return jsonify({"error": "No supported files found in the repository."}), 404
 
         # embed repo into pinecone
-        upsert_to_pinecone(files_content, repo_url, repo_path)
+        try:
+            upsert_to_pinecone(files_content, repo_url, repo_path)
+        except Exception as e:
+            print("Error while uploading to pinecone:", str(e))
+
         print('embeddings inserted to pinecone!')
 
         # Delete the cloned repository
-        shutil.rmtree(repo_path)  # Remove the directory
-        print(f'Repository at {repo_path} deleted successfully.')
+        delete_directory(repo_path)
 
         return jsonify({"message": "Repository embedded successfully."}), 200
 
     except Exception as e:
         print(f"Error in embed_repository: {str(e)}")
         return jsonify({"error": str(e)}), 500
-
-
-def get_huggingface_embeddings(text, model_name="sentence-transformers/all-mpnet-base-v2"):
-    model = SentenceTransformer(model_name)
-    return model.encode(text)
-
-# get context endpoint
-@app.route('/api/rag', methods=['GET'])
-def perform_rag():
-
-    # query from request
-    # repo url from request
-    raw_query_embedding = get_huggingface_embeddings(query)
-
-    top_matches = pinecone_index.query(vector=raw_query_embedding.tolist(), top_k=5, include_metadata=True, namespace=repo_url)
-
-    # Get the list of retrieved texts
-    contexts = [item['metadata']['text'] for item in top_matches['matches']]
-
-    augmented_query = "<CONTEXT>\n" + "\n\n-------\n\n".join(contexts[ : 10]) + "\n-------\n</CONTEXT>\n\n\n\nMY QUESTION:\n" + query
-
-    # Modify the prompt below as need to improve the response quality
-    system_prompt = f"""You are a Senior Software Engineer, specializing in TypeScript.
-
-    Answer any questions I have about the codebase, based on the code provided. Always consider all of the context provided when forming a response.
-    """
-
-    llm_response = client.chat.completions.create(
-        model="llama-3.1-8b-instant",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": augmented_query}
-        ]
-    )
-
-    return llm_response.choices[0].message.content
 
 if __name__ == '__main__':
     app.run(debug=True)
