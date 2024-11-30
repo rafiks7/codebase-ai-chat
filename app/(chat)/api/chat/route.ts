@@ -101,18 +101,17 @@ export async function POST(request: Request) {
     queryWithContext = await getContext(queryEmbedding, userMessage.content, repoUrl);
   }
 
-
-  if (queryWithContext) {
-    console.log('updating message to include context!')
-    userMessage.content = queryWithContext;
-  }
-
   await saveMessages({
     messages: [
       { ...userMessage, id: generateUUID(), createdAt: new Date(), chatId: id },
     ],
   });
-
+  
+  if (queryWithContext) {
+    console.log('updating message to include context!')
+    userMessage.content = queryWithContext;
+  }
+  
   const streamingData = new StreamData();
 
   const result = await streamText({
