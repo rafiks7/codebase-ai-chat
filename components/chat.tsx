@@ -1,6 +1,6 @@
 "use client";
 
-import type { Attachment, Message } from "ai";
+import type { Attachment, ChatRequestOptions, Message } from "ai";
 import { useChat } from "ai/react";
 import { AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
@@ -17,19 +17,22 @@ import { Block, type UIBlock } from "./block";
 import { BlockStreamHandler } from "./block-stream-handler";
 import { MultimodalInput } from "./multimodal-input";
 import { Overview } from "./overview";
+import { getChatById } from "@/lib/db/queries";
 
 export function Chat({
   id,
   initialMessages,
   selectedModelId,
+  repoUrl,
 }: {
   id: string;
   initialMessages: Array<Message>;
   selectedModelId: string;
+  repoUrl: string | undefined;
 }) {
   const { mutate } = useSWRConfig();
 
-  const [repoUrl, setRepoUrl] = useState("");
+  const [inputRepo, setInputRepo] = useState(repoUrl);
 
   const {
     messages,
@@ -42,12 +45,16 @@ export function Chat({
     stop,
     data: streamingData,
   } = useChat({
-    body: { id, modelId: selectedModelId, repoUrl },
+    body: { id, modelId: selectedModelId, repoUrl: inputRepo },
     initialMessages,
     onFinish: () => {
       mutate("/api/history");
     },
   });
+
+  useEffect( () => {
+    console.log('inputRepo:', inputRepo);
+  },[inputRepo])
 
   const { width: windowWidth = 1920, height: windowHeight = 1080 } =
     useWindowSize();
@@ -78,19 +85,19 @@ export function Chat({
 
   const [repoCloned, setRepoCloned] = useState(false);
 
-  const handleNewChatSubmit = async (event: React.FormEvent) => {
+  const handleCloneRepo = async (event: React.FormEvent) => {
     event.preventDefault();
     console.log("cloning repo...");
 
-    console.log("Repo URL:", repoUrl);
+    console.log("Repo URL:", inputRepo);
 
     // call clone repo function
     try {
       const response = await fetch(
-        `http://localhost:5000/api/embed-repo?repo_url=${repoUrl}`,
+        `http://localhost:5000/api/embed-repo?repo_url=${inputRepo}`,
         {
-          method: 'GET',
-          mode: 'no-cors',
+          method: "GET",
+          mode: "no-cors",
         }
       );
     } catch (error) {
@@ -102,21 +109,70 @@ export function Chat({
     // insert embeddings to pinecone
 
     setRepoCloned(true);
-    setRepoUrl("");
   };
+
+  // const handleCustomSubmit = async (
+  //   event?: { preventDefault?: () => void },
+  //   chatRequestOptions?: ChatRequestOptions
+  // ) => {
+  //   console.log('CUSOTM SUBMIT!!!!!!!!!!!!!')
+  //   if (event && event.preventDefault) {
+  //     event.preventDefault(); 
+  //   }
+  //   if (!input.trim()) return; // Check if input is empty
+
+  //   const newMessage: Message = {
+  //     id: crypto.randomUUID(), // Generate a unique ID for the message
+  //     role: "user", // Set the role as 'user'
+  //     content: input.trim(), // Use the input as the content
+  //     createdAt: new Date(), // Set the current timestamp
+  //     experimental_attachments: attachments,
+  //   };
+
+  //   const updatedMessages = [...messages, newMessage];
+
+  //   console.log('content:', input)
+  //   console.log('repoUrl in handleCustomSubmit: ', repoUrl)
+
+  //   try {
+  //     // Send the message to the server
+  //     await fetch("/api/chat", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         id,
+  //         messages: updatedMessages,
+  //         modelId: selectedModelId,
+  //         repoUrl,
+  //       }),
+  //     });
+
+  //     // Update local state to include the new message
+  //     append(newMessage);
+
+  //     // Clear the input field
+  //     setInput("");
+  //     setAttachments([]); // Clear attachments if needed
+  //   } catch (error) {
+  //     console.error("Error sending message:", error);
+  //     // Handle error (e.g., show a toast notification)
+  //   }
+  // };
 
   return (
     <>
       {!repoCloned && messages.length === 0 ? (
         <div className="flex items-center justify-center h-screen">
           <form
-            onSubmit={handleNewChatSubmit}
+            onSubmit={handleCloneRepo}
             className="mb-4 flex flex-col items-center"
           >
             <input
               type="text"
-              value={repoUrl}
-              onChange={(e) => setRepoUrl(e.target.value)}
+              defaultValue={inputRepo}
+              onChange={(e) => setInputRepo(e.target.value)}
               placeholder="paste your GitHub url here."
               className="border rounded p-4 w-64"
               required

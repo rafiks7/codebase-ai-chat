@@ -15,6 +15,11 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
   if (!chat) {
     notFound();
   }
+  
+  let repoUrl;
+  if (chat.repoUrl) {
+    repoUrl = chat.repoUrl;
+  }
 
   const session = await auth();
 
@@ -41,6 +46,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
       id={chat.id}
       initialMessages={convertToUIMessages(messagesFromDb)}
       selectedModelId={selectedModelId}
+      repoUrl={repoUrl || undefined}
     />
   );
 }

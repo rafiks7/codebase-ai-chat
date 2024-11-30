@@ -20,15 +20,9 @@ export async function getContext(queryEmbedding: Embedding, query: string, repo_
         vector: queryEmbedding,
     })
 
-    console.log('top matches:', top_matches)
-
     const contexts = top_matches.matches.map((item: any) => item.metadata.text);
 
-    console.log('contexts: ', contexts)
-
     const augmented_query = "<CONTEXT>\n" + contexts.slice(0, 10).join("\n\n-------\n\n") + "\n-------\n</CONTEXT>\n\n\n\nMY QUESTION:\n" + query;
-
-    console.log('augmented query: ', augmented_query)
 
     return augmented_query;
 }

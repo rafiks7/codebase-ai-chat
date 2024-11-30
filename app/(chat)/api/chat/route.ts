@@ -98,12 +98,12 @@ export async function POST(request: Request) {
   console.log('type of userMessage content:', typeof userMessage.content)
   if (queryEmbedding && typeof userMessage.content === "string") {
     console.log('getting context...')
-    queryWithContext = await getContext(queryEmbedding, userMessage.content, "https://github.com/rafiks7/SecureAgent");
+    queryWithContext = await getContext(queryEmbedding, userMessage.content, repoUrl);
   }
-  console.log('queryWithContext:', queryWithContext)
 
 
   if (queryWithContext) {
+    console.log('updating message to include context!')
     userMessage.content = queryWithContext;
   }
 
