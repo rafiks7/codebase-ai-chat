@@ -34,6 +34,8 @@ export function Chat({
 
   const [inputRepo, setInputRepo] = useState(repoUrl);
 
+  const [rag, setRag] = useState(false); // State for rag value
+
   const {
     messages,
     setMessages,
@@ -45,7 +47,7 @@ export function Chat({
     stop,
     data: streamingData,
   } = useChat({
-    body: { id, modelId: selectedModelId, repoUrl: inputRepo },
+    body: { id, modelId: selectedModelId, repoUrl: inputRepo, rag: rag },
     initialMessages,
     onFinish: () => {
       mutate("/api/history");
@@ -53,6 +55,15 @@ export function Chat({
   });
 
   const [inProgress, setInProgress] = useState(false);
+
+  // Function to handle rag value from child
+  const handleRagChange = (ragValue: boolean) => {
+    setRag(ragValue);
+  };
+
+  useEffect( () => {
+    console.log('rag: ', rag)
+  }, [rag])
 
   const { width: windowWidth = 1920, height: windowHeight = 1080 } =
     useWindowSize();
@@ -197,6 +208,7 @@ export function Chat({
               setMessages={setMessages}
               append={append}
               disabled={!repoCloned && messages.length === 0}
+              onRagChange={handleRagChange}
             />
           </form>
         </div>

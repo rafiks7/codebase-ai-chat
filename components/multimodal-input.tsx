@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
 import type {
   Attachment,
   ChatRequestOptions,
   CreateMessage,
   Message,
-} from 'ai';
-import cx from 'classnames';
-import { motion } from 'framer-motion';
-import type React from 'react';
+} from "ai";
+import cx from "classnames";
+import { motion } from "framer-motion";
+import type React from "react";
 import {
   useRef,
   useEffect,
@@ -17,27 +17,28 @@ import {
   type Dispatch,
   type SetStateAction,
   type ChangeEvent,
-} from 'react';
-import { toast } from 'sonner';
-import { useLocalStorage, useWindowSize } from 'usehooks-ts';
+} from "react";
+import { toast } from "sonner";
+import { useLocalStorage, useWindowSize } from "usehooks-ts";
 
-import { sanitizeUIMessages } from '@/lib/utils';
+import { sanitizeUIMessages } from "@/lib/utils";
 
-import { ArrowUpIcon, PaperclipIcon, StopIcon } from './icons';
-import { PreviewAttachment } from './preview-attachment';
-import { Button } from './ui/button';
-import { Textarea } from './ui/textarea';
+import { ArrowUpIcon, PaperclipIcon, StopIcon } from "./icons";
+import { PreviewAttachment } from "./preview-attachment";
+import { Button } from "./ui/button";
+import { Textarea } from "./ui/textarea";
 
 const suggestedActions = [
   {
-    title: 'Explain this code',
-    label: 'within the project?',
-    action: 'Explain this code in the current project context?',
+    title: "Explain this code",
+    label: "within the project?",
+    action: "Explain this code in the current project context?",
   },
   {
-    title: 'Find related components or functions',
-    label: 'for this feature?',
-    action: 'Find related components or functions for this feature in the codebase?',
+    title: "Find related components or functions",
+    label: "for this feature?",
+    action:
+      "Find related components or functions for this feature in the codebase?",
   },
 ];
 
@@ -55,6 +56,7 @@ export function MultimodalInput({
   handleSubmit,
   className,
   disabled,
+  onRagChange,
 }: {
   chatId: string;
   input: string;
@@ -67,16 +69,17 @@ export function MultimodalInput({
   setMessages: Dispatch<SetStateAction<Array<Message>>>;
   append: (
     message: Message | CreateMessage,
-    chatRequestOptions?: ChatRequestOptions,
+    chatRequestOptions?: ChatRequestOptions
   ) => Promise<string | null | undefined>;
   handleSubmit: (
     event?: {
       preventDefault?: () => void;
     },
-    chatRequestOptions?: ChatRequestOptions,
+    chatRequestOptions?: ChatRequestOptions
   ) => void;
   className?: string;
   disabled?: boolean;
+  onRagChange: (rag: boolean) => void; // Prop to send rag state to parent
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -89,21 +92,23 @@ export function MultimodalInput({
 
   const adjustHeight = () => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight + 2}px`;
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = `${
+        textareaRef.current.scrollHeight + 2
+      }px`;
     }
   };
 
   const [localStorageInput, setLocalStorageInput] = useLocalStorage(
-    'input',
-    '',
+    "input",
+    ""
   );
 
   useEffect(() => {
     if (textareaRef.current) {
       const domValue = textareaRef.current.value;
       // Prefer DOM value over localStorage to handle hydration
-      const finalValue = domValue || localStorageInput || '';
+      const finalValue = domValue || localStorageInput || "";
       setInput(finalValue);
       adjustHeight();
     }
@@ -123,35 +128,38 @@ export function MultimodalInput({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadQueue, setUploadQueue] = useState<Array<string>>([]);
 
-  const submitForm = useCallback(() => {
-    window.history.replaceState({}, '', `/chat/${chatId}`);
+  const submitForm = useCallback(
+    () => {
+      window.history.replaceState({}, "", `/chat/${chatId}`);
 
-    handleSubmit(undefined, {
-      experimental_attachments: attachments,
-    });
+      handleSubmit(undefined, {
+        experimental_attachments: attachments,
+      });
 
-    setAttachments([]);
-    setLocalStorageInput('');
+      setAttachments([]);
+      setLocalStorageInput("");
 
-    if (width && width > 768) {
-      textareaRef.current?.focus();
-    }
-  }, [
-    attachments,
-    handleSubmit,
-    setAttachments,
-    setLocalStorageInput,
-    width,
-    chatId,
-  ]);
+      if (width && width > 768) {
+        textareaRef.current?.focus();
+      }
+    },
+    [
+      attachments,
+      handleSubmit,
+      setAttachments,
+      setLocalStorageInput,
+      width,
+      chatId,
+    ]
+  );
 
   const uploadFile = async (file: File) => {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
     try {
-      const response = await fetch('/api/files/upload', {
-        method: 'POST',
+      const response = await fetch("/api/files/upload", {
+        method: "POST",
         body: formData,
       });
 
@@ -168,7 +176,7 @@ export function MultimodalInput({
       const { error } = await response.json();
       toast.error(error);
     } catch (error) {
-      toast.error('Failed to upload file, please try again!');
+      toast.error("Failed to upload file, please try again!");
     }
   };
 
@@ -182,7 +190,7 @@ export function MultimodalInput({
         const uploadPromises = files.map((file) => uploadFile(file));
         const uploadedAttachments = await Promise.all(uploadPromises);
         const successfullyUploadedAttachments = uploadedAttachments.filter(
-          (attachment) => attachment !== undefined,
+          (attachment) => attachment !== undefined
         );
 
         setAttachments((currentAttachments) => [
@@ -190,12 +198,12 @@ export function MultimodalInput({
           ...successfullyUploadedAttachments,
         ]);
       } catch (error) {
-        console.error('Error uploading files!', error);
+        console.error("Error uploading files!", error);
       } finally {
         setUploadQueue([]);
       }
     },
-    [setAttachments],
+    [setAttachments]
   );
 
   return (
@@ -211,15 +219,15 @@ export function MultimodalInput({
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ delay: 0.05 * index }}
                 key={`suggested-action-${suggestedAction.title}-${index}`}
-                className={index > 1 ? 'hidden sm:block' : 'block'}
+                className={index > 1 ? "hidden sm:block" : "block"}
               >
                 <Button
                   variant="ghost"
                   onClick={async () => {
-                    window.history.replaceState({}, '', `/chat/${chatId}`);
+                    window.history.replaceState({}, "", `/chat/${chatId}`);
 
                     append({
-                      role: 'user',
+                      role: "user",
                       content: suggestedAction.action,
                     });
                   }}
@@ -255,9 +263,9 @@ export function MultimodalInput({
             <PreviewAttachment
               key={filename}
               attachment={{
-                url: '',
+                url: "",
                 name: filename,
-                contentType: '',
+                contentType: "",
               }}
               isUploading={true}
             />
@@ -267,23 +275,29 @@ export function MultimodalInput({
 
       <Textarea
         ref={textareaRef}
-        placeholder="Send a message..."
+        placeholder="Send a message (ctrl + enter to search codebase)"
         value={input}
         onChange={handleInput}
         className={cx(
-          'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-xl text-base bg-muted',
-          className,
+          "min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-xl text-base bg-muted",
+          className
         )}
         rows={3}
         autoFocus
         onKeyDown={(event) => {
-          if (event.key === 'Enter' && !event.shiftKey) {
+          if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
 
             if (isLoading) {
-              toast.error('Please wait for the model to finish its response!');
+              toast.error("Please wait for the model to finish its response!");
             } else {
-              submitForm();
+              if (event.ctrlKey) {
+                onRagChange(true);
+                submitForm();
+              } else {
+                onRagChange(false);
+                submitForm();
+              }
             }
           }
         }}
@@ -306,6 +320,7 @@ export function MultimodalInput({
           className="rounded-full p-1.5 h-fit absolute bottom-2 right-2 m-0.5 border dark:border-zinc-600"
           onClick={(event) => {
             event.preventDefault();
+            onRagChange(false);
             submitForm();
           }}
           disabled={input.length === 0 || uploadQueue.length > 0}

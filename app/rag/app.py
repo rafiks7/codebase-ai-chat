@@ -20,6 +20,7 @@ import shutil
 import stat
 import subprocess
 import json
+import pinecone
 
 
 # Load environment variables from .env.local
@@ -214,6 +215,18 @@ def upsert_to_pinecone(files_content, repo_url, repo_path):
             )
 
             documents.append(doc)
+
+
+        # delete namespace if it exists already
+        stats = pinecone_index.describe_index_stats(namespace=repo_url)
+
+        # Step 2: If stats are returned, the namespace exists
+        if stats.get('namespaces', {}).get(repo_url):
+            print(f"Namespace {repo_url} exists. Proceeding to delete.")
+            # Delete all vectors in the namespace
+            pinecone_index.delete(deleteAll=True, namespace=repo_url)
+        else:
+            print(f"Namespace {repo_url} does not exist.")
 
 
         # Create a PineconeVectorStore instance

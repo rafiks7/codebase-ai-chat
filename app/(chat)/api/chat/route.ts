@@ -56,7 +56,8 @@ export async function POST(request: Request) {
     messages,
     modelId,
     repoUrl,
-  }: { id: string; messages: Array<Message>; modelId: string; repoUrl: string } =
+    rag,
+  }: { id: string; messages: Array<Message>; modelId: string; repoUrl: string; rag:boolean } =
     await request.json();
 
   const session = await auth();
@@ -78,6 +79,8 @@ export async function POST(request: Request) {
     return new Response("No user message found", { status: 400 });
   }
 
+  console.log('rag value in route.ts:', rag)
+
   const chat = await getChatById({ id });
 
   console.log('repoUrl in route.ts', repoUrl)
@@ -88,7 +91,7 @@ export async function POST(request: Request) {
 
 
   let queryEmbedding = null;
-  if (typeof userMessage.content === "string") {
+  if (typeof userMessage.content === "string" && rag) {
     console.log('generating query embedding...')
     queryEmbedding = await getEmbedding(userMessage.content);
   }
@@ -96,7 +99,7 @@ export async function POST(request: Request) {
 
   let queryWithContext = null;
   console.log('type of userMessage content:', typeof userMessage.content)
-  if (queryEmbedding && typeof userMessage.content === "string") {
+  if (queryEmbedding && typeof userMessage.content === "string" && rag) {
     console.log('getting context...')
     queryWithContext = await getContext(queryEmbedding, userMessage.content, repoUrl);
   }
@@ -107,7 +110,7 @@ export async function POST(request: Request) {
     ],
   });
   
-  if (queryWithContext) {
+  if (queryWithContext && rag) {
     console.log('updating message to include context!')
     userMessage.content = queryWithContext;
   }
