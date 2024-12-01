@@ -61,10 +61,6 @@ export function Chat({
     setRag(ragValue);
   };
 
-  useEffect( () => {
-    console.log('rag: ', rag)
-  }, [rag])
-
   const { width: windowWidth = 1920, height: windowHeight = 1080 } =
     useWindowSize();
 
@@ -136,26 +132,34 @@ export function Chat({
               <div className="border-t-4 border-blue-500 border-solid w-16 h-16 rounded-full animate-spin"></div>
             </div>
           ) : (
-            <form
-              onSubmit={handleCloneRepo}
-              className="mb-4 flex flex-col items-center"
-            >
-              <input
-                type="text"
-                defaultValue={inputRepo}
-                onChange={(e) => setInputRepo(e.target.value)}
-                placeholder="Paste your GitHub URL here."
-                className="border rounded p-4 w-64"
-                required
-              />
-              <button
-                type="submit"
-                className="mt-4 p-4 bg-blue-500 text-white rounded w-64"
-                disabled={inProgress} // Disable button during loading
+            <div className="flex flex-col items-center">
+              {/* Add the text message at the top */}
+              <p className="mb-10 text-center text-gray-500 text-sm italic">
+                Currently optimized for JavaScript/TypeScript, <br></br>but still capable
+                of supporting other languages.
+              </p>
+
+              <form
+                onSubmit={handleCloneRepo}
+                className="mb-4 flex flex-col items-center"
               >
-                Clone Repo
-              </button>
-            </form>
+                <input
+                  type="text"
+                  defaultValue={inputRepo}
+                  onChange={(e) => setInputRepo(e.target.value)}
+                  placeholder="Paste your GitHub URL here."
+                  className="border rounded p-4 w-64"
+                  required
+                />
+                <button
+                  type="submit"
+                  className="mt-4 p-4 bg-blue-500 text-white rounded w-64"
+                  disabled={inProgress} // Disable button during loading
+                >
+                  Clone Repo
+                </button>
+              </form>
+            </div>
           )}
         </div>
       ) : (
