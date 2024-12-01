@@ -52,9 +52,7 @@ export function Chat({
     },
   });
 
-  useEffect( () => {
-    console.log('inputRepo:', inputRepo);
-  },[inputRepo])
+  const [inProgress, setInProgress] = useState(false);
 
   const { width: windowWidth = 1920, height: windowHeight = 1080 } =
     useWindowSize();
@@ -87,6 +85,7 @@ export function Chat({
 
   const handleCloneRepo = async (event: React.FormEvent) => {
     event.preventDefault();
+    setInProgress(true);
     console.log("cloning repo...");
 
     console.log("Repo URL:", inputRepo);
@@ -104,86 +103,49 @@ export function Chat({
       console.error("Failed to clone repo", error);
       return;
     }
-    // parse code
-
-    // insert embeddings to pinecone
 
     setRepoCloned(true);
+    setInProgress(false);
   };
 
-  // const handleCustomSubmit = async (
-  //   event?: { preventDefault?: () => void },
-  //   chatRequestOptions?: ChatRequestOptions
-  // ) => {
-  //   console.log('CUSOTM SUBMIT!!!!!!!!!!!!!')
-  //   if (event && event.preventDefault) {
-  //     event.preventDefault(); 
-  //   }
-  //   if (!input.trim()) return; // Check if input is empty
-
-  //   const newMessage: Message = {
-  //     id: crypto.randomUUID(), // Generate a unique ID for the message
-  //     role: "user", // Set the role as 'user'
-  //     content: input.trim(), // Use the input as the content
-  //     createdAt: new Date(), // Set the current timestamp
-  //     experimental_attachments: attachments,
-  //   };
-
-  //   const updatedMessages = [...messages, newMessage];
-
-  //   console.log('content:', input)
-  //   console.log('repoUrl in handleCustomSubmit: ', repoUrl)
-
-  //   try {
-  //     // Send the message to the server
-  //     await fetch("/api/chat", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({
-  //         id,
-  //         messages: updatedMessages,
-  //         modelId: selectedModelId,
-  //         repoUrl,
-  //       }),
-  //     });
-
-  //     // Update local state to include the new message
-  //     append(newMessage);
-
-  //     // Clear the input field
-  //     setInput("");
-  //     setAttachments([]); // Clear attachments if needed
-  //   } catch (error) {
-  //     console.error("Error sending message:", error);
-  //     // Handle error (e.g., show a toast notification)
-  //   }
-  // };
+  useEffect(() => {
+    console.log("inProgress:", inProgress);
+  }, [inProgress]);
 
   return (
     <>
       {!repoCloned && messages.length === 0 ? (
-        <div className="flex items-center justify-center h-screen">
-          <form
-            onSubmit={handleCloneRepo}
-            className="mb-4 flex flex-col items-center"
-          >
-            <input
-              type="text"
-              defaultValue={inputRepo}
-              onChange={(e) => setInputRepo(e.target.value)}
-              placeholder="paste your GitHub url here."
-              className="border rounded p-4 w-64"
-              required
-            />
-            <button
-              type="submit"
-              className="mt-4 p-4 bg-blue-500 text-white rounded w-64"
+        <div className="flex items-center justify-center h-screen relative">
+          {/* Show the loading spinner when inProgress is true */}
+          {inProgress ? (
+            <div className="absolute flex flex-col justify-center items-center h-screen w-full">
+              <p className="mb-4 text-lg text-blue-500">
+                This might take a minute...
+              </p>
+              <div className="border-t-4 border-blue-500 border-solid w-16 h-16 rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            <form
+              onSubmit={handleCloneRepo}
+              className="mb-4 flex flex-col items-center"
             >
-              Clone Repo
-            </button>
-          </form>
+              <input
+                type="text"
+                defaultValue={inputRepo}
+                onChange={(e) => setInputRepo(e.target.value)}
+                placeholder="Paste your GitHub URL here."
+                className="border rounded p-4 w-64"
+                required
+              />
+              <button
+                type="submit"
+                className="mt-4 p-4 bg-blue-500 text-white rounded w-64"
+                disabled={inProgress} // Disable button during loading
+              >
+                Clone Repo
+              </button>
+            </form>
+          )}
         </div>
       ) : (
         <div className="flex flex-col min-w-0 h-dvh bg-background">
