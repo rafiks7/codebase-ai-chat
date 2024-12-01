@@ -198,10 +198,10 @@ def parse_file_content(files):
                 all_functions.append(file)
         else:
             print('extension not supported: ', extension)
+            all_functions.append(file)
             continue
     
     return all_functions
-
 
 def upsert_to_pinecone(files_content, repo_url, repo_path):
     try:
