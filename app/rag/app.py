@@ -18,6 +18,8 @@ from dotenv import load_dotenv
 from flask_cors import CORS
 import shutil
 import stat
+import subprocess
+import json
 
 
 # Load environment variables from .env.local
@@ -35,9 +37,13 @@ CORS(app)
 SUPPORTED_EXTENSIONS = {'.py', '.js', '.tsx', '.jsx', '.ipynb', '.java',
                          '.cpp', '.ts', '.go', '.rs', '.vue', '.swift', '.c', '.h'}
 
-IGNORED_DIRS = {'node_modules', 'venv', 'env', 'dist', 'build', '.git',
-                '__pycache__', '.next', '.vscode', 'vendor'}
-
+IGNORED_DIRS = {
+    'node_modules', 'venv', 'env', 'dist', 'build', '.git', '__pycache__', 
+    '.next', '.vscode', 'vendor', '.idea', '.tox', '.nvm', '.docker', 'test', 
+    'tests', 'logs', '.history', '.mypy_cache', '.pytest_cache', '.serverless', 
+    'tmp', 'cache', '.cache', '.sass-cache', 'bower_components', 'public', 'out', 
+    'coverage', 'npm-debug.log', 'yarn-error.log', 'yarn.lock', 'package-lock.json'
+}
 
 # Initialize Pinecone
 pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
@@ -161,11 +167,47 @@ def get_main_files_content(repo_path: str):
 
     return files_content
 
+def parse_file_content(files):
+    
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+
+    # Path to your JavaScript file (js_parser.js) in the same directory
+    js_file_path = os.path.join(current_dir, 'js_parser.js')
+
+    all_functions = []
+
+    for file in files:
+        # Use os.path.splitext to split the file path into root and extension
+        print(file['name'])
+        extension = os.path.splitext(file['name'])[1]
+        result = subprocess.run(['node', js_file_path, file['content']], capture_output=True, text=True)
+        if extension in ['.js', '.jsx', '.ts', '.tsx']:
+            # Check for any errors in stderr
+            if result.stderr:
+                print(f"Error from parser: {result.stderr}")
+            # Parse the JSON output from stdout
+            output = json.loads(result.stdout)
+
+            if output:
+                # print("Functions found:", output)
+                for func in output:
+                    all_functions.append({"name": file['name'], "content": func})
+            else:
+                print("No functions found.")
+                all_functions.append(file)
+        else:
+            print('extension not supported: ', extension)
+            continue
+    
+    return all_functions
+
+
 def upsert_to_pinecone(files_content, repo_url, repo_path):
     try:
         documents = []
 
         for file in files_content:
+            print('file while upserting to pinecone:', file)
             doc = Document(
                 page_content=f"{file['name']}\n{file['content']}",
                 metadata={"source": file['name']}
@@ -188,9 +230,7 @@ def upsert_to_pinecone(files_content, repo_url, repo_path):
         
         # Delete the cloned repository
         delete_directory(repo_path)
-
-
-
+    
 
 # clone repo endpoint
 @app.route('/api/embed-repo', methods=['GET'])
@@ -209,9 +249,11 @@ def embed_repository():
         if not files_content:
             return jsonify({"error": "No supported files found in the repository."}), 404
 
+        parsed_content = parse_file_content(files_content)
+        
         # embed repo into pinecone
         try:
-            upsert_to_pinecone(files_content, repo_url, repo_path)
+            upsert_to_pinecone(parsed_content, repo_url, repo_path)
         except Exception as e:
             print("Error while uploading to pinecone:", str(e))
 
@@ -224,6 +266,7 @@ def embed_repository():
 
     except Exception as e:
         print(f"Error in embed_repository: {str(e)}")
+        delete_directory(repo_path)
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
