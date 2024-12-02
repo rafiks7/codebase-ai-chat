@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS "Chat" (
 	"createdAt" timestamp NOT NULL,
 	"messages" json NOT NULL,
 	"userId" uuid NOT NULL
+	"repoUrl" TEXT
 );
 --> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "User" (
