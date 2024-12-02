@@ -32,6 +32,12 @@
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
+        },
+        "repoUrl": {
+          "name": "repoUrl",
+          "type": "varchar(255)", 
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {},

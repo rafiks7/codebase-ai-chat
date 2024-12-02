@@ -58,7 +58,6 @@ export async function saveChat({
   repoUrl: string;
 }) {
   try {
-    console.log('repoUrl in saveChat:' , repoUrl)
     return await db.insert(chat).values({
       id,
       createdAt: new Date(),
