@@ -1,27 +1,20 @@
 from flask import Flask, jsonify, request
 
-from sentence_transformers import SentenceTransformer
-from sklearn.metrics.pairwise import cosine_similarity
 from langchain_pinecone import PineconeVectorStore
 from langchain_openai import OpenAIEmbeddings 
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from pinecone import Pinecone
 import os
 import tempfile
-from github import Github, Repository
 from git import Repo
 from openai import OpenAI
 from pathlib import Path
 from langchain.schema import Document
-from pinecone import Pinecone
 from dotenv import load_dotenv
 from flask_cors import CORS
 import shutil
 import stat
 import subprocess
 import json
-import pinecone
-
 
 # Load environment variables from .env.local
 if load_dotenv('.env.local'):
@@ -284,4 +277,4 @@ def embed_repository():
 
 if __name__ == '__main__':
     app.run(debug=True)
-    print('Server ')
+    print('Server running ...')

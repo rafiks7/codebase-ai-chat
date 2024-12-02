@@ -100,7 +100,7 @@ export function Chat({
     // call clone repo function
     try {
       const response = await fetch(
-        `http://localhost:5000/api/embed-repo?repo_url=${inputRepo}`,
+        `${window.location.origin}/api/embed-repo?repo_url=${inputRepo}`,
         {
           method: "GET",
           mode: "no-cors",
