@@ -1,0 +1,10 @@
+.git/
+.vscode/
+.idea/
+__tests__/
+*.log
+*.md
+
+.env
+
+assets/
