@@ -4,7 +4,6 @@ from langchain_pinecone import PineconeVectorStore
 from langchain_openai import OpenAIEmbeddings 
 from pinecone import Pinecone
 import os
-import tempfile
 from git import Repo
 from openai import OpenAI
 from pathlib import Path
