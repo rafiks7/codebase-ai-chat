@@ -1,19 +1,19 @@
-from flask import Flask, jsonify, request
+# from flask import Flask, jsonify, request
 
-from langchain_pinecone import PineconeVectorStore
-from langchain_openai import OpenAIEmbeddings 
-from pinecone import Pinecone
-import os
-from git import Repo
-from openai import OpenAI
-from pathlib import Path
-from langchain.schema import Document
-from dotenv import load_dotenv
-from flask_cors import CORS
-import shutil
-import stat
-import subprocess
-import json
+# from langchain_pinecone import PineconeVectorStore
+# from langchain_openai import OpenAIEmbeddings 
+# from pinecone import Pinecone
+# import os
+# from git import Repo
+# from openai import OpenAI
+# from pathlib import Path
+# from langchain.schema import Document
+# from dotenv import load_dotenv
+# from flask_cors import CORS
+# import shutil
+# import stat
+# import subprocess
+# import json
 
 # Load environment variables from .env.local
 if load_dotenv('.env.local'):
